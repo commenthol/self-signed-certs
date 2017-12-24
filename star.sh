@@ -16,7 +16,7 @@ if [ -f root_ca.srl ]; then
 fi
 
 # remove old keys
-test -f star.key && rm star.key star.csr star.crt
+test -f star.key && rm star.key star.csr star.crt star_chained.crt
 
 # generate key
 openssl genrsa -out star.key 4096
@@ -34,6 +34,9 @@ openssl x509 -req -days $DAYS \
   -extensions v3_req \
   -extfile star.ini \
   -in star.csr -out star.crt
+
+# chain certs (e.g. for HAProxy)
+cat root_ca.pem star.crt star.key > star_chained.crt
 
 # show certificate
 openssl x509 -text -noout -in star.crt

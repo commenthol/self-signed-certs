@@ -23,7 +23,7 @@ if [ -f root_ca.srl ]; then
 fi
 
 # remove old keys
-test -f site.key && rm site.key site.csr site.crt
+test -f site.key && rm site.key site.csr site.crt site_chained.crt
 
 # generate key
 openssl genrsa -out site.key 4096
@@ -41,6 +41,9 @@ openssl x509 -req -days $DAYS \
   -extensions v3_req \
   -extfile site.ini \
   -in site.csr -out site.crt
+
+# chain certs (e.g. for HAProxy)
+cat root_ca.pem site.crt site.key > site_chained.crt
 
 # show certificate
 openssl x509 -text -noout -in site.crt
