@@ -10,8 +10,6 @@
 # ```
 #
 
-# read password from file
-CA_PASS=$(cat root_ca.pass)
 # cert validity in days
 DAYS=9999
 
@@ -37,13 +35,13 @@ openssl req -new \
 openssl x509 -req -days $DAYS \
   -CA root_ca.pem -CAkey root_ca.key \
   $CA_SERIAL \
-  -passin "pass:$CA_PASS" \
+  -passin "file:root_ca.pass" \
   -extensions v3_req \
   -extfile site.ini \
   -in site.csr -out site.crt
 
 # chain certs (e.g. for HAProxy)
-cat root_ca.pem site.crt site.key > site_chained.crt
+cat site.crt site.key > site_chained.crt
 
 # show certificate
 openssl x509 -text -noout -in site.crt

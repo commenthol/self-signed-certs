@@ -3,8 +3,6 @@
 # generates a wildcard (multi-domain) server certificate
 #
 
-# read password from file
-CA_PASS=$(cat root_ca.pass)
 # cert validity in days
 DAYS=9999
 
@@ -30,13 +28,13 @@ openssl req -new \
 openssl x509 -req -days $DAYS \
   -CA root_ca.pem -CAkey root_ca.key \
   $CA_SERIAL \
-  -passin "pass:$CA_PASS" \
+  -passin "file:root_ca.pass" \
   -extensions v3_req \
   -extfile star.ini \
   -in star.csr -out star.crt
 
 # chain certs (e.g. for HAProxy)
-cat root_ca.pem star.crt star.key > star_chained.crt
+cat star.crt star.key > star_chained.crt
 
 # show certificate
 openssl x509 -text -noout -in star.crt

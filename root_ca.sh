@@ -3,8 +3,6 @@
 # generates a root ca certificate
 #
 
-# read password from file
-CA_PASS=$(cat root_ca.pass)
 # cert validity in days
 DAYS=9999
 
@@ -13,14 +11,14 @@ test -f root_ca.key && rm root_ca.key root_ca.pem
 
 # generate key
 openssl genrsa -des3 \
-  -passout "pass:$CA_PASS" \
+  -passout "file:root_ca.pass" \
   -out root_ca.key 4096
 
 # create certificate
 openssl req -x509 -new -nodes \
   -days $DAYS \
   -config root_ca.ini \
-  -passin "pass:$CA_PASS" \
+  -passin "file:root_ca.pass" \
   -key root_ca.key -out root_ca.pem
 
 # show certificate
