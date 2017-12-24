@@ -16,9 +16,8 @@ This project provides some scripts to setup a root CA to sign single domain or m
 
 ### root CA
 
-1. Change root ca password in `root_ca.pass`
-2. Edit `[req_distinguished_name]` in `root_ca.ini` to match your needs. Check `man req` for information on fields.
-3. Run `./root_ca.sh`
+1. Edit `[req_distinguished_name]` in `root_ca.ini` to match your needs. Check `man req` for information on fields.
+2. Run `./root_ca.sh`
 
 ### single domain
 

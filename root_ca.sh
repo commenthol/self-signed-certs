@@ -9,6 +9,9 @@ DAYS=9999
 # remove old keys
 test -f root_ca.key && rm root_ca.key root_ca.pem
 
+# generate password
+head -c 500 /dev/urandom | tr -dc "[:print:]" | head -c 80 > root_ca.pass
+
 # generate key
 openssl genrsa -des3 \
   -passout "file:root_ca.pass" \

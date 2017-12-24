@@ -1,3 +1,4 @@
+*.pass
 *.pem
 *.key
 *.csr
