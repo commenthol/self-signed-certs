@@ -33,7 +33,7 @@ openssl req -new \
 
 # sign certificate
 openssl x509 -req -days $DAYS \
-  -CA root_ca.pem -CAkey root_ca.key \
+  -CA root_ca.crt -CAkey root_ca.key \
   $CA_SERIAL \
   -passin "file:root_ca.pass" \
   -extensions v3_req \
