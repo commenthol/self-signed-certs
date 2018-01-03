@@ -33,8 +33,7 @@ This project provides some scripts to setup a root CA to sign single domain or m
 
 ## Testing
 
-1. Get [`node`](https://nodejs.org).
-2. Import `root_ca.crt` in Browser and/or OS:
+1. Import `root_ca.crt` in Browser and/or OS:
    - _Chrome_ : Type in Url "chrome://settings/certificates" > Tab:Authorities > Button:Import > Select `root_ca.crt` > Trust this cert for indent. websites
      Use "chrome://flags/#show-cert-link" to see certificate details from Url-Pane.
    - _Firefox_ : Type in Url "about:preferences#privacy" > Section:Certificates > Button:View Certificates > Tab:Authorities > Button:Import... > Select `root_ca.crt` > Trust this cert for indent. websites
@@ -45,12 +44,13 @@ This project provides some scripts to setup a root CA to sign single domain or m
      sudo cp root_ca.crt /usr/local/share/ca-certificates
      sudo update-ca-certificates
      ```
-3. Add some entries in your `/etc/hosts` file. E.g.:
+2. Add some entries in your `/etc/hosts` file. E.g.:
    ````
    127.0.0.1    aa.aa
    127.0.0.2    one.aa.aa
    127.0.0.3    two.test.aa
    ````
+3. Get [`node`](https://nodejs.org).
 4. Start HTTPS server with:
    1. `node test/https.js site` for single site
    2. Browse <https://aa.aa:8443>
