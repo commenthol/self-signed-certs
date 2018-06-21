@@ -50,6 +50,7 @@ openssl req -new \
 openssl x509 -req -days $DAYS \
   -CA $ROOT_CRT -CAkey $ROOT_KEY \
   $CA_SERIAL \
+  -sha256 \
   -passin "file:$ROOT_PASS" \
   -extensions v3_req \
   -extfile site.ini \
