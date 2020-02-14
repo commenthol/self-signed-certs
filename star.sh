@@ -23,6 +23,8 @@ PASSWORD="password"
 
 # ----
 
+test ! -f $ROOT_CRT && ./root_ca.sh
+
 CA_SERIAL="-CAcreateserial"
 if [ -f "$ROOT_SRL" ]; then
   CA_SERIAL="-CAserial $ROOT_SRL"

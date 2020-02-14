@@ -30,6 +30,8 @@ PASSWORD="password"
 
 # ----
 
+test ! -f $ROOT_CRT && ./root_ca.sh
+
 CA_SERIAL="-CAcreateserial"
 if [ -f "$ROOT_SRL" ]; then
   CA_SERIAL="-CAserial $ROOT_SRL"
@@ -66,6 +68,6 @@ openssl pkcs12 -export \
   -in $CRT -inkey $KEY \
   -certfile $ROOT_CRT \
   -out $PFX
-      
+
 # show certificate
 # openssl x509 -text -noout -in $CRT

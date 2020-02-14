@@ -16,7 +16,7 @@ test ! -d $CERTS && mkdir -p $CERTS
 test -f $ROOT_KEY && rm $ROOT_KEY $ROOT_PASS $ROOT_CRT
 
 # generate password
-head -c 500 /dev/urandom | tr -dc "[:print:]" | head -c 80 > $ROOT_PASS
+openssl rand -base64 100 | tr -dc "[:print:]" | head -c 80 > $ROOT_PASS
 
 # generate key
 openssl genrsa -des3 \
