@@ -5,7 +5,31 @@
 
 # cert validity in days
 DAYS=9999
+# certificate directory
 CERTS='./certs'
+
+# ----
+
+INI="root_ca.ini"
+
+(cat << EOS
+[req]
+prompt = no
+distinguished_name = req_distinguished_name
+
+[req_distinguished_name]
+C = AA
+ST = Andromeda
+L = Island
+O = AA Certification
+OU = ca.aa
+CN = AA Certification
+emailAddress = info@ca.aa
+
+EOS
+) > $INI
+
+# ----
 
 ROOT_PASS="$CERTS/root_ca.pass"
 ROOT_KEY="$CERTS/root_ca.key"
@@ -26,7 +50,7 @@ openssl genrsa -des3 \
 # create certificate
 openssl req -x509 -new -nodes \
   -days $DAYS \
-  -config root_ca.ini \
+  -config $INI \
   -passin "file:$ROOT_PASS" \
   -key $ROOT_KEY -out $ROOT_CRT
 

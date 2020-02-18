@@ -7,3 +7,4 @@ tmp/
 *.crt
 *.srl
 *.log
+*.ini

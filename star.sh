@@ -5,21 +5,60 @@
 
 # cert validity in days
 DAYS=9999
+# certificate directory
 CERTS="./certs"
+# certificate name
+NAME="star"
+# domain
+CN=aa.aa
+
+# ----
+
+INI="$NAME.ini"
+
+(cat << EOS
+[req]
+prompt = no
+distinguished_name = req_distinguished_name
+req_extensions = v3_req
+
+[req_distinguished_name]
+C = AA
+ST = Frogstar
+L = City
+O = AA Server
+CN = $CN
+emailAddress = info@$CN
+
+[v3_req]
+keyUsage = keyEncipherment, dataEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = $CN
+DNS.2 = *.aa.aa
+DNS.3 = *.test.aa
+DNS.4 = localhost
+
+EOS
+) > $INI
+
+# ----
 
 ROOT_PASS="$CERTS/root_ca.pass"
 ROOT_KEY="$CERTS/root_ca.key"
 ROOT_CRT="$CERTS/root_ca.crt"
 ROOT_SRL="$CERTS/root_ca.srl"
 
-KEY="$CERTS/star.key"
-CSR="$CERTS/star.csr"
-CRT="$CERTS/star.crt"
-PFX="$CERTS/star.pfx"
-PFX_PASS="$CERTS/star.pfx.pass"
-CHAIN="$CERTS/star_chained.crt"
+KEY="$CERTS/$NAME.key"
+CSR="$CERTS/$NAME.csr"
+CRT="$CERTS/$NAME.crt"
+PFX="$CERTS/$NAME.pfx"
+PFX_PASS="$CERTS/$NAME.pfx.pass"
+CHAIN="$CERTS/${NAME}_chained.crt"
 
-PASSWORD="password"
+PASSWORD=$(openssl rand -base64 50 | tr -dc "[:print:]" | head -c 40)
 
 # ----
 
@@ -38,7 +77,7 @@ openssl genrsa -out $KEY 4096
 
 # create certificate
 openssl req -new \
-  -config star.ini \
+  -config $INI \
   -key $KEY -out $CSR
 
 # sign certificate
@@ -48,7 +87,7 @@ openssl x509 -req -days $DAYS \
   -sha256 \
   -passin "file:$ROOT_PASS" \
   -extensions v3_req \
-  -extfile star.ini \
+  -extfile $INI \
   -in $CSR -out $CRT
 
 # chain certs (e.g. for HAProxy)
