@@ -1,8 +1,8 @@
 # Self Signed Certificates
 
-> Generate self signed ssl certificates with your own root CA certificate
+> Generate self signed ssl certificates with your own root CA / intermediate certificate
 
-This project provides some scripts to setup a root CA to sign single domain or multi-domain (wildcard) certificates.
+This project provides some scripts to setup a root CA (and intermediate cert) to sign single domain or multi-domain (wildcard) certificates.
 
 - `root_ca.sh` : creates root CA certificate
 - `site.sh` : creates single-domain certificate
@@ -15,6 +15,7 @@ This project provides some scripts to setup a root CA to sign single domain or m
 * [Requires](#requires)
 * [Howto](#howto)
   * [root CA](#root-ca)
+  * [intermediate certificate](#intermediate-certificate)
   * [single domain](#single-domain)
   * [multi domain (wildcard)](#multi-domain-wildcard)
 * [Testing](#testing)
@@ -34,11 +35,21 @@ This project provides some scripts to setup a root CA to sign single domain or m
 1. Edit `[req_distinguished_name]` in `root_ca.sh` to match your needs. Check `man req` for information on fields.
 2. Run `./root_ca.sh`
 
+### intermediate certificate
+
+If an intermediate certificate is desired:
+
+1. `[req_distinguished_name]` in `root_ca.sh` to match your needs. Check `man req` for information on fields.
+2. Run `./intermediate.sh`
+
+In case that the intermediate certificate is not present then single sites or wildcard certs are signed with the root certificate.
+
 ### single domain
 
 1. Edit `[req_distinguished_name]` in `site.sh` to match your needs. Check `man req` for information on fields.
 2. Change domain in `site.ini`. You need to change `CN = <host>` as well as entry in `subjectAltName = DNS:<host>`
 3. Run `./site.sh`
+   - For a different domain run `./site.sh <domain>`
 
 ### multi domain (wildcard)
 

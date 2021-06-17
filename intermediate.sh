@@ -1,26 +1,36 @@
 #!/bin/bash
 #
-# generates a root ca certificate
-# @see https://jamielinux.com/docs/openssl-certificate-authority/create-the-root-pair.html
-# @see https://access.redhat.com/documentation/en-us/red_hat_update_infrastructure/2.1/html/administration_guide/chap-red_hat_update_infrastructure-administration_guide-certification_revocation_list_crl
+# generates an intermediate certificate
+# see https://jamielinux.com/docs/openssl-certificate-authority/create-the-intermediate-pair.html
 #
 
 set -x
 
-# cert validity in days (20 years)
-DAYS=7320
+# cert validity in days (10 years)
+DAYS=3655
 # certificate directory
 CERTS="./certs"
 # certificate revocation list dir
 CRLS="./certs/crl"
+# certificate name
+NAME="intermediate"
 
 # ----
 
-INI="root_ca.ini"
+INI="$NAME.ini"
+
+# ----
 
 ROOT_PASS="$CERTS/root_ca.pass"
 ROOT_KEY="$CERTS/root_ca.key"
 ROOT_CRT="$CERTS/root_ca.crt"
+ROOT_SRL="$CERTS/root_ca.srl"
+
+KEY="$CERTS/$NAME.key"
+CSR="$CERTS/$NAME.csr"
+CRT="$CERTS/$NAME.crt"
+PASS="$CERTS/$NAME.pass"
+CRL="$CRLS/$NAME.crl"
 
 ROOT_CRL="$CRLS/root_ca.crl"
 CRL_DATABASE="$CRLS/index.txt"
@@ -47,9 +57,10 @@ prompt = no
 default_bits = 2048
 distinguished_name = req_distinguished_name
 string_mask = utf8only
+# SHA-1 is deprecated, so use SHA-2 instead.
 default_md = sha256
 # Extension to add when the -x509 option is used.
-x509_extensions = v3_ca
+x509_extensions = v3_intermediate_ca
 
 [req_distinguished_name]
 # Country Name (2 letter code)
@@ -63,15 +74,15 @@ O = AA Certification
 # Organizational Unit Name
 OU = Certification Unit
 # Common Name
-CN = AA Certification
+CN = AA Certification Intermediate
 # Email Address
 emailAddress = info@ca.aa
 
-[v3_ca]
-# Extensions for a typical CA (man x509v3_config).
+[v3_intermediate_ca]
+# Extensions for a typical intermediate CA (man x509v3_config).
 subjectKeyIdentifier = hash
 authorityKeyIdentifier = keyid:always,issuer
-basicConstraints = critical, CA:true
+basicConstraints = critical, CA:true, pathlen:0
 keyUsage = critical, digitalSignature, cRLSign, keyCertSign
 
 EOS
@@ -79,39 +90,50 @@ EOS
 
 # ----
 
-test ! -d $CERTS && mkdir -p $CERTS
-test ! -d $CRLS && mkdir -p $CRLS
+test ! -f "$ROOT_CRT" && ./root_ca.sh
 
-test ! -f "$CRL_DATABASE" && touch "$CRL_DATABASE"
-echo 00 > "$CRL_NUMBER"
+CA_SERIAL="-CAcreateserial"
+if [ -f "$ROOT_SRL" ]; then
+  CA_SERIAL="-CAserial $ROOT_SRL"
+fi
 
 # remove old keys
-test -f $ROOT_KEY && rm $ROOT_KEY $ROOT_PASS $ROOT_CRT
+test -f $KEY && rm $KEY $CSR $CRT $CHAIN $PFX $PFX_PASS
 
 # generate password
-openssl rand -base64 100 | tr -dc "[:print:]" | head -c 80 > $ROOT_PASS
+openssl rand -base64 100 | tr -dc "[:print:]" | head -c 80 > "$PASS"
 
 # generate key
 openssl genrsa -aes256 \
-  -passout "file:$ROOT_PASS" \
-  -out $ROOT_KEY 4096
+  -passout "file:$PASS" \
+  -out "$KEY" 4096
 
-# create certificate
-openssl req -x509 -new -nodes \
-  -days $DAYS \
+# create certificate signing request
+openssl req -new \
+  -passin "file:$PASS" \
   -config $INI \
+  -key $KEY -out $CSR
+
+# sign certificate
+openssl x509 -req \
+  -extensions v3_intermediate_ca \
+  -days $DAYS \
+  -CA $ROOT_CRT -CAkey $ROOT_KEY \
+  $CA_SERIAL \
+  -sha256 \
   -passin "file:$ROOT_PASS" \
-  -key $ROOT_KEY -out $ROOT_CRT
+  -extfile $INI \
+  -in $CSR -out $CRT
 
 # show certificate
-openssl x509 -text -noout -in $ROOT_CRT
+openssl x509 -text -noout -in $CRT
 
 # generate cert revocation list
 openssl ca \
   -gencrl \
   -config $INI \
-  -keyfile $ROOT_KEY \
-  -cert $ROOT_CRT \
-  -passin "file:$ROOT_PASS" \
-  -out "$ROOT_CRL"
+  -keyfile $KEY \
+  -cert $CRT \
+  -passin "file:$PASS" \
+  -out "$CRL"
 

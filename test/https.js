@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const fs = require('fs')
 const {resolve} = require('path')
 const https = require('https')
@@ -10,14 +12,26 @@ module.exports = setup
 function setup (opts) {
   const {type, pfx} = opts
 
+  const read = (filename, enc, supress) => {
+    try {
+      return fs.readFileSync(resolve(certsDir, filename), enc)
+    } catch (e) {
+      !supress && console.error(e.message)
+    }
+  }
+
   const crtOptions = {
-    key: fs.readFileSync(resolve(certsDir, type + '.key')),
-    cert: fs.readFileSync(resolve(certsDir, type + '.crt'))
+    key: read(type + '.key'),
+    cert: read(type + '.crt'),
+    ca: [
+      read('intermediate.crt', undefined, true),
+      read('root_ca.crt')
+    ].filter(Boolean)
   }
 
   const pfxOptions = {
-    pfx: fs.readFileSync(resolve(certsDir, type + '.pfx')),
-    passphrase: fs.readFileSync(resolve(certsDir, type + '.pfx.pass'), 'utf8').trim()
+    pfx: read(type + '.pfx'),
+    passphrase: read(type + '.pfx.pass', 'utf8').trim()
   }
 
   const options = pfx ? pfxOptions : crtOptions
@@ -46,10 +60,10 @@ if (require.main === module) {
     const arg = args.shift()
     if (/^\d+$/.test(arg)) {
       port = +arg
-    } else if (/^(star|site)$/.test(arg)) {
-      type = arg
     } else if (/^(pfx)$/.test(arg)) {
       pfx = true
+    } else {
+      type = arg
     }
   }
 
