@@ -4,7 +4,7 @@
 #
 
 # cert validity in days
-DAYS=9999
+DAYS=375
 # certificate directory
 CERTS="./certs"
 # certificate name
@@ -31,8 +31,8 @@ CN = $CN
 emailAddress = info@$CN
 
 [v3_req]
-keyUsage = keyEncipherment, dataEncipherment
-extendedKeyUsage = serverAuth
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth, clientAuth
 subjectAltName = @alt_names
 
 [alt_names]
@@ -81,7 +81,8 @@ openssl req -new \
   -key $KEY -out $CSR
 
 # sign certificate
-openssl x509 -req -days $DAYS \
+openssl x509 -req \
+  -days $DAYS \
   -CA $ROOT_CRT -CAkey $ROOT_KEY \
   $CA_SERIAL \
   -sha256 \
