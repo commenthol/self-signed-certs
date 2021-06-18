@@ -4,8 +4,10 @@
 # see https://jamielinux.com/docs/openssl-certificate-authority/create-the-intermediate-pair.html
 #
 
-set -x
+#set -x
 
+# certification domain
+CA_DOMAIN=ca.aa
 # cert validity in days (10 years)
 DAYS=3655
 # certificate directory
@@ -20,6 +22,8 @@ NAME="intermediate"
 INI="$NAME.ini"
 
 # ----
+
+CRLDP="https://$CA_DOMAIN/root_ca.crl"
 
 ROOT_PASS="$CERTS/root_ca.pass"
 ROOT_KEY="$CERTS/root_ca.key"
@@ -76,7 +80,7 @@ OU = Certification Unit
 # Common Name
 CN = AA Certification Intermediate
 # Email Address
-emailAddress = info@ca.aa
+emailAddress = info@$CA_DOMAIN
 
 [v3_intermediate_ca]
 # Extensions for a typical intermediate CA (man x509v3_config).
@@ -84,6 +88,7 @@ subjectKeyIdentifier = hash
 authorityKeyIdentifier = keyid:always,issuer
 basicConstraints = critical, CA:true, pathlen:0
 keyUsage = critical, digitalSignature, cRLSign, keyCertSign
+crlDistributionPoints = URI:$CRLDP
 
 EOS
 ) > $INI

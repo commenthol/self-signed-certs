@@ -30,6 +30,9 @@ This project provides some scripts to setup a root CA (and intermediate cert) to
 
 ## Howto
 
+1. Download scripts as [zip file](https://github.com/commenthol/self-signed-certs/archive/refs/heads/master.zip) 
+2. unzip master.zip
+
 ### root CA
 
 1. Edit `[req_distinguished_name]` in `root_ca.sh` to match your needs. Check `man req` for information on fields.

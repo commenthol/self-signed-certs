@@ -5,8 +5,10 @@
 # @see https://access.redhat.com/documentation/en-us/red_hat_update_infrastructure/2.1/html/administration_guide/chap-red_hat_update_infrastructure-administration_guide-certification_revocation_list_crl
 #
 
-set -x
+#set -x
 
+# certification domain
+CA_DOMAIN=ca.aa
 # cert validity in days (20 years)
 DAYS=7320
 # certificate directory
@@ -65,7 +67,7 @@ OU = Certification Unit
 # Common Name
 CN = AA Certification
 # Email Address
-emailAddress = info@ca.aa
+emailAddress = info@$CA_DOMAIN
 
 [v3_ca]
 # Extensions for a typical CA (man x509v3_config).
