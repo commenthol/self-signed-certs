@@ -5,6 +5,7 @@
 This project provides some scripts to setup a root CA (and intermediate cert) to sign single domain or multi-domain (wildcard) certificates.
 
 - `root_ca.sh` : creates root CA certificate
+- `intermediate.sh` : creates intermediate certificate
 - `site.sh` : creates single-domain certificate
 - `star.sh` : creates multi-domain certificate
 
