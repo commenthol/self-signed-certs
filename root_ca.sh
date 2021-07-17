@@ -5,55 +5,103 @@
 # @see https://access.redhat.com/documentation/en-us/red_hat_update_infrastructure/2.1/html/administration_guide/chap-red_hat_update_infrastructure-administration_guide-certification_revocation_list_crl
 #
 
+set -e
 #set -x
 
 # certification domain
 CA_DOMAIN=ca.aa
 # cert validity in days (20 years)
 DAYS=7320
-# certificate directory
-CERTS="./certs"
-# certificate revocation list dir
-CRLS="./certs/crl"
+# base directory
+DIR="."
 
 # ----
 
-INI="root_ca.ini"
+INI="$DIR/private/root_ca.ini"
 
-ROOT_PASS="$CERTS/root_ca.pass"
-ROOT_KEY="$CERTS/root_ca.key"
-ROOT_CRT="$CERTS/root_ca.crt"
+ROOT_PASS="$DIR/private/root_ca.pass"
+ROOT_KEY="$DIR/private/root_ca.key"
+ROOT_CRT="$DIR/certs/root_ca.crt"
 
-ROOT_CRL="$CRLS/root_ca.crl"
-CRL_DATABASE="$CRLS/index.txt"
-CRL_NUMBER="$CRLS/number"
+CRL="$DIR/crl/root_ca.crl"
+CRL_DATABASE="$DIR/crl/root_ca.index.txt"
+CRL_NUMBER="$DIR/crl/number"
+
+RANDFILE="$DIR/private/randfile"
+SERIAL="$DIR/private/serial"
+
+# ----
+
+_mkdir () {
+  test -d "$1" && rm -rf "$1"
+  mkdir -p "$1"
+}
+
+_mkdir "$DIR/certs"
+_mkdir "$DIR/crl"
+_mkdir "$DIR/csr"
+_mkdir "$DIR/private"
+chmod 700 "$DIR/private"
+
+# clean start
+touch "$CRL_DATABASE"
+echo 00 > "$CRL_NUMBER"
+echo 1000 > "$SERIAL"
+
+# ---
 
 (cat << EOS
-[ca]
-default_ca = ca_default
+[ ca ]
+default_ca        = CA_default
 
-[ca_default]
-default_md        = sha256
-# For certificate revocation lists.
+[ CA_default ]
+dir               = $DIR          
 database          = $CRL_DATABASE
-crlnumber         = $CRL_NUMBER
+new_certs_dir     = $DIR/certs   
+certificate       = $ROOT_CRT    
+serial            = $SERIAL
+rand_serial       = yes
+private_key       = $ROOT_KEY
+RANDFILE          = $RANDFILE
+default_days      = $DAYS
+default_crl_days  = 30 
+default_md        = sha256
+policy            = policy_any
+email_in_dn       = no
+name_opt          = ca_default
+cert_opt          = ca_default
+unique_subject    = no
+copy_extensions   = copyall
+x509_extensions   = v3_ca
 crl_extensions    = crl_ext
-default_crl_days  = 30
 
-[crl_ext]
-# Extension for CRLs (man x509v3_config).
-authorityKeyIdentifier = keyid:always,issuer:always
+[ policy_strict ]
+countryName            = match
+stateOrProvinceName    = match
+organizationName       = match
+organizationalUnitName = optional
+commonName             = supplied
+emailAddress           = optional
 
-[req]
-prompt = no
-default_bits = 2048
-distinguished_name = req_distinguished_name
-string_mask = utf8only
-default_md = sha256
+[ policy_any ]
+countryName            = supplied
+stateOrProvinceName    = optional
+organizationName       = optional
+organizationalUnitName = optional
+commonName             = supplied
+emailAddress           = optional
+
+[ req ]
+prompt              = no
+default_bits        = 4096
+default_days        = 375
+default_md          = sha256
+string_mask         = utf8only
+distinguished_name  = req_distinguished_name
 # Extension to add when the -x509 option is used.
-x509_extensions = v3_ca
+x509_extensions     = v3_ca
 
-[req_distinguished_name]
+[ req_distinguished_name ]
 # Country Name (2 letter code)
 C = AA
 # State or Province Name
@@ -69,51 +117,38 @@ CN = AA Certification
 # Email Address
 emailAddress = info@$CA_DOMAIN
 
-[v3_ca]
+[ v3_ca ]
 # Extensions for a typical CA (man x509v3_config).
 subjectKeyIdentifier = hash
 authorityKeyIdentifier = keyid:always,issuer
 basicConstraints = critical, CA:true
 keyUsage = critical, digitalSignature, cRLSign, keyCertSign
 
+[ crl_ext ]
+# Extension for CRLs (man x509v3_config).
+authorityKeyIdentifier = keyid:always,issuer:always
+
 EOS
-) > $INI
+) > "$INI"
 
-# ----
-
-test ! -d $CERTS && mkdir -p $CERTS
-test ! -d $CRLS && mkdir -p $CRLS
-
-test ! -f "$CRL_DATABASE" && touch "$CRL_DATABASE"
-echo 00 > "$CRL_NUMBER"
-
-# remove old keys
-test -f $ROOT_KEY && rm $ROOT_KEY $ROOT_PASS $ROOT_CRT
+openssl rand -base64 100 > "$RANDFILE"
 
 # generate password
-openssl rand -base64 100 | tr -dc "[:print:]" | head -c 80 > $ROOT_PASS
+openssl rand -base64 100 | tr -dc "[:print:]" | head -c 80 > "$ROOT_PASS"
 
 # generate key
 openssl genrsa -aes256 \
   -passout "file:$ROOT_PASS" \
-  -out $ROOT_KEY 4096
+  -out "$ROOT_KEY" 4096
 
 # create certificate
-openssl req -x509 -new -nodes \
+openssl req -x509 \
+  -config "$INI" \
+  -new -nodes \
   -days $DAYS \
-  -config $INI \
   -passin "file:$ROOT_PASS" \
-  -key $ROOT_KEY -out $ROOT_CRT
+  -key "$ROOT_KEY" \
+  -out "$ROOT_CRT"
 
 # show certificate
-openssl x509 -text -noout -in $ROOT_CRT
-
-# generate cert revocation list
-openssl ca \
-  -gencrl \
-  -config $INI \
-  -keyfile $ROOT_KEY \
-  -cert $ROOT_CRT \
-  -passin "file:$ROOT_PASS" \
-  -out "$ROOT_CRL"
-
+openssl x509 -text -noout -in "$ROOT_CRT"

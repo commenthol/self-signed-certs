@@ -1,10 +1,7 @@
 certs/
+crl/
+csr/
+private/
 tmp/
-*.pass
-*.pem
-*.key
-*.csr
-*.crt
-*.srl
 *.log
 *.ini

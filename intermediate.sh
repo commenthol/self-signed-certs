@@ -4,69 +4,92 @@
 # see https://jamielinux.com/docs/openssl-certificate-authority/create-the-intermediate-pair.html
 #
 
+set -e
 #set -x
 
 # certification domain
 CA_DOMAIN=ca.aa
 # cert validity in days (10 years)
 DAYS=3655
-# certificate directory
-CERTS="./certs"
-# certificate revocation list dir
-CRLS="./certs/crl"
 # certificate name
 NAME="intermediate"
+# base directory
+DIR="."
 
 # ----
 
-INI="$NAME.ini"
+INI="$DIR/private/$NAME.ini"
 
-# ----
+ROOT_PASS="$DIR/private/root_ca.pass"
+ROOT_KEY="$DIR/private/root_ca.key"
+ROOT_CRT="$DIR/certs/root_ca.crt"
 
-CRLDP="https://$CA_DOMAIN/root_ca.crl"
+CRL="$DIR/crl/root_ca.crl"
+CRL_DATABASE="$DIR/crl/root_ca.index.txt"
+CRL_NUMBER="$DIR/crl/number"
+CRL_DP="https://$CA_DOMAIN/root_ca.crl"
 
-ROOT_PASS="$CERTS/root_ca.pass"
-ROOT_KEY="$CERTS/root_ca.key"
-ROOT_CRT="$CERTS/root_ca.crt"
-ROOT_SRL="$CERTS/root_ca.srl"
+KEY="$DIR/private/$NAME.key"
+CSR="$DIR/csr/$NAME.csr"
+CRT="$DIR/certs/$NAME.crt"
+PASS="$DIR/private/$NAME.pass"
 
-KEY="$CERTS/$NAME.key"
-CSR="$CERTS/$NAME.csr"
-CRT="$CERTS/$NAME.crt"
-PASS="$CERTS/$NAME.pass"
-CRL="$CRLS/$NAME.crl"
+RANDFILE="$DIR/private/randfile"
+SERIAL="$DIR/private/serial"
 
-ROOT_CRL="$CRLS/root_ca.crl"
-CRL_DATABASE="$CRLS/index.txt"
-CRL_NUMBER="$CRLS/number"
-
+_config () {
 (cat << EOS
-[ca]
-default_ca = ca_default
+[ ca ]
+default_ca        = CA_default
 
-[ca_default]
-default_md        = sha256
-# For certificate revocation lists.
+[ CA_default ]
+dir               = $DIR          
 database          = $CRL_DATABASE
-crlnumber         = $CRL_NUMBER
+new_certs_dir     = $DIR/certs   
+certificate       = $ROOT_CRT    
+serial            = $SERIAL
+rand_serial       = yes
+private_key       = $ROOT_KEY
+RANDFILE          = $RANDFILE
+default_days      = $DAYS
+default_crl_days  = 30 
+default_md        = sha256
+policy            = policy_any
+email_in_dn       = no
+name_opt          = ca_default
+cert_opt          = ca_default
+unique_subject    = no
+copy_extensions   = copyall
+x509_extensions   = v3_intermediate_ca
 crl_extensions    = crl_ext
-default_crl_days  = 30
 
-[crl_ext]
-# Extension for CRLs (man x509v3_config).
-authorityKeyIdentifier = keyid:always,issuer:always
+[ policy_strict ]
+countryName            = match
+stateOrProvinceName    = match
+organizationName       = match
+organizationalUnitName = optional
+commonName             = supplied
+emailAddress           = optional
 
-[req]
-prompt = no
-default_bits = 2048
-distinguished_name = req_distinguished_name
-string_mask = utf8only
-# SHA-1 is deprecated, so use SHA-2 instead.
-default_md = sha256
+[ policy_any ]
+countryName            = supplied
+stateOrProvinceName    = optional
+organizationName       = optional
+organizationalUnitName = optional
+commonName             = supplied
+emailAddress           = optional
+
+[ req ]
+prompt              = no
+default_bits        = 4096
+default_days        = 375
+default_md          = sha256
+string_mask         = utf8only
+distinguished_name  = req_distinguished_name
 # Extension to add when the -x509 option is used.
-x509_extensions = v3_intermediate_ca
+x509_extensions     = v3_intermediate_ca
 
-[req_distinguished_name]
+[ req_distinguished_name ]
 # Country Name (2 letter code)
 C = AA
 # State or Province Name
@@ -82,28 +105,30 @@ CN = AA Certification Intermediate
 # Email Address
 emailAddress = info@$CA_DOMAIN
 
-[v3_intermediate_ca]
+[ v3_intermediate_ca ]
 # Extensions for a typical intermediate CA (man x509v3_config).
 subjectKeyIdentifier = hash
 authorityKeyIdentifier = keyid:always,issuer
 basicConstraints = critical, CA:true, pathlen:0
 keyUsage = critical, digitalSignature, cRLSign, keyCertSign
-crlDistributionPoints = URI:$CRLDP
+crlDistributionPoints = URI:$CRL_DP
+
+[ crl_ext ]
+# Extension for CRLs (man x509v3_config).
+authorityKeyIdentifier = keyid:always,issuer:always
 
 EOS
-) > $INI
+) > "$INI"
+}
+
+_config
 
 # ----
 
 test ! -f "$ROOT_CRT" && ./root_ca.sh
 
-CA_SERIAL="-CAcreateserial"
-if [ -f "$ROOT_SRL" ]; then
-  CA_SERIAL="-CAserial $ROOT_SRL"
-fi
-
 # remove old keys
-test -f $KEY && rm $KEY $CSR $CRT $CHAIN $PFX $PFX_PASS
+test -f "$KEY" && rm "$PASS" "$KEY" "$CSR" "$CRT"
 
 # generate password
 openssl rand -base64 100 | tr -dc "[:print:]" | head -c 80 > "$PASS"
@@ -116,29 +141,26 @@ openssl genrsa -aes256 \
 # create certificate signing request
 openssl req -new \
   -passin "file:$PASS" \
-  -config $INI \
-  -key $KEY -out $CSR
+  -config "$INI" \
+  -key "$KEY" -out "$CSR"
 
 # sign certificate
-openssl x509 -req \
-  -extensions v3_intermediate_ca \
+openssl ca \
+  -batch \
+  -notext \
+  -config "$INI" \
   -days $DAYS \
-  -CA $ROOT_CRT -CAkey $ROOT_KEY \
-  $CA_SERIAL \
-  -sha256 \
   -passin "file:$ROOT_PASS" \
-  -extfile $INI \
-  -in $CSR -out $CRT
+  -in "$CSR" \
+  -out "$CRT"
 
 # show certificate
-openssl x509 -text -noout -in $CRT
+openssl x509 -text -noout -in "$CRT"
 
-# generate cert revocation list
-openssl ca \
-  -gencrl \
-  -config $INI \
-  -keyfile $KEY \
-  -cert $CRT \
-  -passin "file:$PASS" \
-  -out "$CRL"
-
+# initialize crl database for correct key revocation if using with 
+# openssl ca -config private/intermediate.ini -passin file:private/intermediate.pass -revoke certs/xxx.pem
+CRL_DATABASE="$DIR/crl/$NAME.index.txt"
+ROOT_CRT="$CRT"
+ROOT_KEY="$KEY"
+_config
+touch "$CRL_DATABASE"

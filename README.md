@@ -8,6 +8,7 @@ This project provides some scripts to setup a root CA (and intermediate cert) to
 - `intermediate.sh` : creates intermediate certificate
 - `site.sh` : creates single-domain certificate
 - `star.sh` : creates multi-domain certificate
+- `crl.sh` : updates the certificate revocation lists
 
 ## Table of Contents
 
@@ -19,6 +20,7 @@ This project provides some scripts to setup a root CA (and intermediate cert) to
   * [intermediate certificate](#intermediate-certificate)
   * [single domain](#single-domain)
   * [multi domain (wildcard)](#multi-domain-wildcard)
+* [Folders](#folders)
 * [Testing](#testing)
 * [Security Considerations](#security-considerations)
 * [License](#license)
@@ -27,7 +29,8 @@ This project provides some scripts to setup a root CA (and intermediate cert) to
 
 ## Requires
 
-- openssl ~= (OpenSSL 1.0.2g  1 Mar 2016)
+- OpenSSL 1.0.2g   1 Mar 2016
+- OpenSSL 1.1.1f  31 Mar 2020 (Last used)
 
 ## Howto
 
@@ -52,14 +55,51 @@ In case that the intermediate certificate is not present then single sites or wi
 
 1. Edit `[req_distinguished_name]` in `site.sh` to match your needs. Check `man req` for information on fields.
 2. Change domain in `site.ini`. You need to change `CN = <host>` as well as entry in `subjectAltName = DNS:<host>`
-3. Run `./site.sh`
-   - For a different domain run `./site.sh <domain>`
+3. Run `./site.sh` <br>
+   For a different domain run `./site.sh <domain>` <br>
+     e.g. `./site.sh www.aa.aa`
 
 ### multi domain (wildcard)
 
 1. Edit `[req_distinguished_name]` in `star.sh` to match your needs. Check `man req` for information on fields.
 2. Change domain in `star.sh`. You need to change `CN = <host>` as well as entries in `[alt_names]` to match your sub-domains.
 3. Run `./star.sh`
+   For a different altnames run `./star.sh <stardomain> <domain>` <br>
+     e.g. `./star.sh *.aa.aa aa.aa localhost`
+
+## Folders
+
+```sh
+├── certs                   # the generated certificates
+│   ├── intermediate.crt    # intermediate
+│   ├── root_ca.crt         # root
+│   ├── site.crt            # site certificate
+│   ├── site.key            # site private key
+│   ├── site.crt.key        # combined certificate & key e.g. for HaProxy
+│   ├── site.pfx            # PKCS12
+│   ├── site.pfx.pass       # Password for PKCS12
+│   └── site.tgz            # all site certificate files compressed
+├── crl
+│   ├── intermediate.crl    # certifcate revocation list for intermediate cert
+│   ├── intermediate.index.txt # intermediate revocation database
+│   ├── root_ca.crl         # certificate revocation list for root crt
+│   └── root_ca.index.txt   # root revocation database
+├── csr                     # directory for signing requests
+├── private                 # directory for all private files
+│   ├── intermediate.ini    # config for intermediate CA
+│   ├── intermediate.key    
+│   ├── intermediate.pass
+│   ├── root_ca.ini         # config for root CA
+│   ├── root_ca.key
+│   └── root_ca.pass
+├── root_ca.sh              # the scripts to run the CA
+├── intermediate.sh
+├── site.sh
+├── star.sh
+└── crl.sh
+```
+
+
 
 ## Testing
 
