@@ -21,6 +21,7 @@ function setup (opts) {
   }
 
   const crtOptions = {
+    dhparam: read('dhparam-4096.pem'),
     key: read(type + '.key'),
     cert: read(type + '.crt'),
     ca: [
