@@ -23,6 +23,7 @@ This project provides some scripts to setup a root CA (and intermediate cert) to
 * [Folders](#folders)
 * [Testing](#testing)
 * [Security Considerations](#security-considerations)
+* [Known Issues](#known-issues)
 * [License](#license)
 
 <!-- toc! -->
@@ -100,7 +101,6 @@ In case that the intermediate certificate is not present then single sites or wi
 ```
 
 
-
 ## Testing
 
 1. Import `root_ca.crt` in Browser and/or OS:
@@ -132,12 +132,47 @@ In case that the intermediate certificate is not present then single sites or wi
    6. Browse <https://two.test.aa:8443>
    7. Browse <https://localhost:8443>
 
+
 ## Security Considerations
 
 Make sure to never ever commit your root_ca key and password within your code.
 Otherwise don't feel frightened if someone provides you with certificates from any domain, even those from the big five.
 
 Read more about [Root Certs and MITM Attacks here](https://www.bleepingcomputer.com/news/security/sennheiser-headset-software-could-allow-man-in-the-middle-ssl-attacks/).
+
+
+## Known Issues
+
+On macOS, `openssl` does not seam to be compatible with Google Chrome or MS Edge Browsers. 
+If you experience problems with these browser showing a page with:
+
+>  This site can’t provide a secure connection  
+> 
+>  aa.aa.de doesn't adhere to security standards.  
+>  ERR_SSL_SERVER_CERT_BAD_FORMAT  
+
+it is recommended to use Linux to generate some accepted certificates:
+
+```sh
+# brew install colima docker
+colima start 
+# or with docker desktop
+open /Application/Docker.app
+
+sh docker/alpine.sh
+# inside the container change to the `/work` directory. Then generate the cert(s) as describe above
+cd /work
+```
+
+Then open Keychain Access app
+```
+open /System/Applications/Utilities/Keychain\ Access.app
+```
+Select Tab "System" and drag-n-drop the `root_ca.crt`  
+Double-click on the "untrusted" Certificate, 
+then set "Trust" to "Always Trust" and confirm with your password.
+
+
 
 ## License
 
