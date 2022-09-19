@@ -46,7 +46,7 @@ chmod 700 "$DIR/private"
 # clean start
 touch "$CRL_DATABASE"
 echo 00 > "$CRL_NUMBER"
-echo 1000 > "$SERIAL"
+openssl rand -hex 12 > "$SERIAL"
 
 # ---
 
@@ -93,7 +93,7 @@ emailAddress           = optional
 
 [ req ]
 prompt              = no
-default_bits        = 4096
+# default_bits        = 4096
 default_days        = 375
 default_md          = sha256
 string_mask         = utf8only
@@ -122,7 +122,7 @@ emailAddress = info@$CA_DOMAIN
 subjectKeyIdentifier = hash
 authorityKeyIdentifier = keyid:always,issuer
 basicConstraints = critical, CA:true
-keyUsage = critical, digitalSignature, cRLSign, keyCertSign
+keyUsage = critical, digitalSignature, keyEncipherment, cRLSign, keyCertSign
 
 [ crl_ext ]
 # Extension for CRLs (man x509v3_config).
