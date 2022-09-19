@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # generates a wildcard (multi-domain) server certificate
 

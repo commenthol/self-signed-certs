@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # generates a root ca certificate
 # @see https://jamielinux.com/docs/openssl-certificate-authority/create-the-root-pair.html

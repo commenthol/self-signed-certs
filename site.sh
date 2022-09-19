@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # generates a server certificate for a single site
 #
@@ -109,7 +109,7 @@ emailAddress           = optional
 
 [ req ]
 prompt              = no
-default_bits        = 4096
+# default_bits        = 2048
 default_days        = 375
 default_md          = sha256
 string_mask         = utf8only
@@ -118,6 +118,7 @@ req_extensions      = v3_req
 
 [ crl_ext ]
 # Extension for CRLs (man x509v3_config).
+issuerAltName          = issuer:copy
 authorityKeyIdentifier = keyid:always
 
 [ req_distinguished_name ]
@@ -137,14 +138,17 @@ CN = $CN
 emailAddress = info@$CN
 
 [ v3_req ]
-nsCertType = server
+#nsCertType = server
 #nsComment = "OpenSSL Generated Server Certificate"
+# authorityKeyIdentifier = keyid,issuer
 subjectKeyIdentifier = hash
-keyUsage = nonRepudiation, digitalSignature, keyEncipherment
-extendedKeyUsage = serverAuth
+basicConstraints = critical, CA:FALSE
+#keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+keyUsage = critical, digitalSignature, keyEncipherment
+#extendedKeyUsage = serverAuth, clientAuth, timeStamping
+extendedKeyUsage = serverAuth, clientAuth
 subjectAltName = DNS:$CN
 crlDistributionPoints = URI:$CRL_DP
-
 
 EOS
 ) > $INI
