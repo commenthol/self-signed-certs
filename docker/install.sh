@@ -11,7 +11,6 @@ apk update \
 
 generate certificate with
 
-	cd /work
 	./star.sh <fqdn1> <fqdn2>
 	# or
 	./site.sh <fqdn>

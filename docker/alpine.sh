@@ -6,7 +6,8 @@ cd "$CWD/.."
 
 docker run -it --rm \
 	-u root \
-	-v $(pwd)":/work" \
+	-v $(pwd):/work \
+	-w /work \
 	-p 8443:8443 \
 	node:18-alpine \
 	sh -c "sh /work/docker/install.sh && sh"
